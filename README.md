@@ -12,4 +12,9 @@ Adjusted for my current system and some things in planning
 TODO:
 * volume information
 * weather 
-      
+
+i3
+---------
+i3 is a wonderful tiling window manager
+
+i3bar allows the integration of conky status informations
