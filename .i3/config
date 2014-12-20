@@ -22,7 +22,8 @@ set $tag6 "6: misc"
 # is used in the bar {} block below.
 # This font is widely installed, provides lots of unicode glyphs, right-to-left
 # text rendering and scalability on retina/hidpi displays (thanks to pango).
-font pango:DejaVu Sans Mono 8
+#font pango:DejaVu Sans Mono 8
+font pango:Source Code Pro 10
 # Before i3 v4.8, we used to recommend this one as the default:
 # font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
 # The font above is very space-efficient, that is, it looks good, sharp and
@@ -123,11 +124,11 @@ bindsym $mod+Shift+0 move container to workspace 10
 
 
 # reload the configuration file
-bindsym $mod+Shift+c reload
+#bindsym $mod+Shift+c reload
 # restart i3 inplace (preserves your layout/session, can be used to upgrade i3)
-bindsym $mod+Shift+r restart
+#bindsym $mod+Shift+r restart
 # exit i3 (logs you out of your X session)
-bindsym $mod+Shift+e exec "i3-msg exit"
+#bindsym $mod+Shift+e exec "i3-msg exit"
 
 # MDP control
 bindsym $mod+Control+Left exec mpc prev
@@ -141,6 +142,8 @@ bindsym XF86AudioPlay exec mpc_toggle
 bindsym XF86AudioMute exec amixer set master toggle
 bindsym XF86AudioLowerVolume exec amixer -q set Master 1%-
 bindsym XF86AudioRaiseVolume exec amixer -q set Master 1%+
+
+### MODES
 
 # resize window (you can also use the mouse for that)
 mode "resize" {
@@ -166,12 +169,32 @@ mode "resize" {
         bindsym Escape mode "default"
 }
 
-bindsym $mod+r mode "resize"
+bindsym $mod+shift+r mode "resize"
 
-# Start i3bar to display a workspace bar (plus the system information i3status
-# finds out, if available)
+mode "move" {
+     bindsym h move left 20 px or 20 ppt
+     bindsym j move down 20 px or 20 ppt
+     bindsym k move up 20 px or 20 ppt
+     bindsym l move right 20 px or 20 ppt
+
+     bindsym Return mode "default"
+     bindsym Escape mode "default"
+}
+
+bindsym $mod+shift+m mode "move"
 
 
+mode "Exit: (q)uit, (r)estart, (x)reload" {
+     bindsym q exit
+     bindsym r mode default; restart
+     bindsym x mode default; reload
+
+     bindsym Return mode "default"
+     bindsym Escape mode "default"
+}
+bindsym $mod+Control+q mode "Exit: (q)uit, (r)estart, (x)reload"
+
+### BARS
 
 # desktop main monitor bottom bar
 bar {
@@ -201,6 +224,8 @@ bar {
 
 }
 
+### RULES
+
 ## rules for workspaces
 workspace $tag1 output DVI-1
 workspace $tag2 output DVI-0
@@ -214,8 +239,8 @@ workspace $tag6 output DVI-1
 # comms
 exec urxvt -e mcabber
 exec urxvt -e weechat
-for_window [title="WeeChat 1.0.1"] floating enable, move workspace $tag2
-for_window [title="mcabber"] floating enable, move workspace $tag2
+for_window [title="WeeChat 1.0.1"] move workspace $tag2
+for_window [title="mcabber"] move workspace $tag2
 
 # dev
 exec --no-startup-id emacs
