@@ -18,3 +18,5 @@ i3
 i3 is a wonderful tiling window manager
 
 i3bar allows the integration of conky status informations
+
+![ScreenShot](https://raw.githubusercontent.com/ze0-/dotfiles/master/conky-i3.png)
