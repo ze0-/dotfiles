@@ -1,5 +1,4 @@
 (require-package 'ess)
-(add-to-list 'auto-mode-alist '("\\.R$" . r-mode))
 (setq ess-eval-visibilty nil)
 (setq ess-ask-for-ess-directory nil)
 

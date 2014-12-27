@@ -24,16 +24,18 @@
           (lambda ()
             (add-to-list 'ac-sources 'ac-source-c-headers)
             (add-to-list 'ac-sources 'ac-source-c-header-symbols t)
-            (hs-minor-mode)))
+            (hs-minor-mode)
+            (setq c-default-style "linux"
+                  c-basic-offset 8
+                  c-set-style "linux")))
 (semantic-mode 1)
 (defun my:add-semantic-to-autocomplete()
   (add-to-list 'ac-sources 'ac-source-semantic)
   )
 (add-hook 'c-mode-common-hook 'my:add-semantic-to-autocomplete)
-(setq c-default-style "linux"
-      c-basic-offset 8)
+
 (defun my-make-CR-do-indent ()
   (define-key c-mode-base-map "\C-m" 'c-context-line-break))
 (add-hook 'c-initialization-hook 'my-make-CR-do-indent)
 
-(provide 'init-C)
+(provide 'init-c)

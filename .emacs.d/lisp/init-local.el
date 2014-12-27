@@ -1,11 +1,17 @@
+;;; package --- Summary
+
+;;; Commentary:
+
+
+;;; Code:
 ;; set up the fill column to 80 and the tab width to 2
 (setq-default fill-column 80)
 (setq-default default-tab-width 2)
 (setq-default indent-tab-mode nil)
 (add-hook 'text-mode-hook 'turn-on-auto-fill)
 
-;; bury the scratch buffer but never kill it
 (defadvice kill-buffer (around kill-buffer-around-advice activate)
+  "Bury the scratch buffer but never kill it."
   (let ((buffer-to-kill (ad-get-arg 0)))
     (if (equal buffer-to-kill "*scratch*")
         (bury-buffer)
@@ -13,6 +19,9 @@
 
 ;; syntax highlighting
 (global-font-lock-mode t)
+
+;; enable line numbering
+(global-linum-mode t)
 
 ;; less garbage collection
 (setq gc-cons-threshold 20000000)
@@ -47,7 +56,17 @@
 (define-key global-map "\C-cb" 'org-iswitchb)
 (define-key global-map [f12] 'org-agenda-list)
 (define-key global-map [f11] 'org-clock-current-task)
-
 (global-unset-key (kbd "C-z"))
 
+(setq org-capture-templates
+      '(("p" "Project" entry (file+headline "~/git/org/personal.org" "Projects/Tasks")
+         "* %?\n  %i\n  %a" :empty-lines-before 1)
+        ("n" "Next Action (Todo)" entry (file+headline "~/git/org/personal.org" "Next Actions")
+         "* TODO %?\n  %i\n  %a" :empty-lines-before 1)
+        ("i" "Inbox item to be processed later" entry (file+headline "~/git/org/personal.org" "INBOX")
+         "* %?\n  %i\n  %a" :empty-lines-before 1)
+        ("j" "Journal" entry (file+datetree "~/git/org/journal.org")
+         "* %?\n\n%i\n\nEntered on %U\n\t%a" :empty-lines-before 1)))
+
 (provide 'init-local)
+;;; init-local ends here

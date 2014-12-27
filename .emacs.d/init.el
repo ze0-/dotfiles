@@ -85,8 +85,10 @@
 (require 'init-ruby-mode)
 (require 'init-rails)
 (require 'init-sql)
+
 (require 'init-R)
-(require 'init-C)
+(require 'init-c)
+(require 'init-shortcuts)
 
 (require 'init-paredit)
 (require 'init-lisp)
@@ -135,7 +137,6 @@
 (when (file-exists-p (expand-file-name "init-local.el" user-emacs-directory))
   (error "Please move init-local.el to ~/.emacs.d/lisp"))
 (require 'init-local nil t)
-
 
 ;;----------------------------------------------------------------------------
 ;; Locales (setting them earlier in this file doesn't work in X)
