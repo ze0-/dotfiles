@@ -1,0 +1,23 @@
+browser dwb
+reload-time 60
+auto-reload yes
+show-read-feeds no
+show-keymap-hint false
+swap-title-and-hints false
+
+
+unbind-key j
+unbind-key k
+unbind-key J
+unbind-key K
+bind-key j next
+bind-key k prev
+bind-key J next-feed
+bind-key K prev-feed
+bind-key j down article
+bind-key k up article
+
+unbind-key ^N
+unbind-key ^P
+bind-key ^N down
+bind-key ^P up
