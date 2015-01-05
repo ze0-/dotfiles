@@ -1,0 +1,1044 @@
+* Configuration
+
+** Personal Information
+#+BEGIN_SRC emacs-lisp
+  (setq user-full-name "Martin Homuth"
+  user-mail-address "martin.homuth@googlemail.com")
+#+END_SRC
+
+#+RESULTS:
+: martin.homuth@googlemail.com
+
+** Emacs Initialization
+*** Load Secret Information
+#+BEGIN_SRC emacs-lisp
+   (load "~/.emacs.secrets" t)
+#+END_SRC
+
+#+RESULTS:
+
+*** Add Package Source
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+(require 'use-package)
+#+END_SRC
+
+#+RESULTS:
+: use-package
+
+**** Packages Installed
+- org
+- use-package
+- helm
+- smart-mode-line
+- color-theme
+- color-theme-solarized
+- undo-tree
+- guide-key
+- helm-swoop
+- windmove
+- smartscan
+- magit
+  - magit-filenotify
+- AucTex
+- auto-complete
+  - auto-complete-c-headers
+  - ac-c-headers
+- Python
+  - Elpy
+  - Jedi
+  - flake8
+
+** General Configuration
+*** Backups
+By default Emacs stores all of the backup files (the =~= backup files) in the .emacs.d folder. This is something we want to change right away
+#+BEGIN_SRC emacs-lisp
+(setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+#+END_SRC
+
+Sacha said: "Disk space is cheap. Save lots"
+#+BEGIN_SRC emacs-lisp
+(setq delete-old-versions -1)
+(setq version-control t)
+(setq vc-make-backup-files t)
+(setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
+#+END_SRC
+
+#+RESULTS:
+| .* | ~/.emacs.d/auto-save-list/ | t |
+
+*** Startup
+This sets up the startup procedure of emacs
+- different configs depending on hostname
+- org agenda in a window in the top right
+*** History
+From [[http://www.wisdomandwonder.com/wordpress/wp-content/uploads/2014/03/C3F.html#fn.2][Grant Rettke (Orgmode.org)]]
+#+BEGIN_SRC emacs-lisp
+(setq savehist-file "~/.emacs.d/savehist")
+(savehist-mode 1)
+(setq history-length t)
+(setq history-delete-duplicates t)
+(setq savehist-save-minibuffer-history 1)
+(setq savehist-additional-variables
+      '(kill-ring
+        search-ring
+        regexp-search-ring))
+#+END_SRC 
+
+#+RESULTS:
+| kill-ring | search-ring | regexp-search-ring |
+
+*** Windows Configuration
+Turn off all the tooltips and menus
+#+BEGIN_SRC emacs-lisp
+(when window-system
+  (tooltip-mode -1)
+  (tool-bar-mode -1)
+  (menu-bar-mode -1)
+  (scroll-bar-mode -1))
+#+END_SRC
+
+#+RESULTS:
+**** Winner-Mode
+Use =C-c <left>= and =C-c <right>= to briefly switch to another window
+#+BEGIN_SRC emacs-lisp
+(use-package winner
+  :ensure winner
+  :init (winner-mode 1))
+#+END_SRC
+*** Sentences End With A Single Space
+(setq sentence-end-double-space nil)
+*** Helm - Interactive Completion
+#+BEGIN_SRC emacs-lisp
+  (use-package helm
+        :ensure helm
+        :diminish helm-mode
+        :init
+        (progn 
+          (require 'helm-config) 
+          (setq helm-candidate-number-limit 100)
+          ;; From https://gist.github.com/antifuchs/9238468
+          (setq helm-idle-delay 0.0 ; update fast sources immediately (doesn't).
+                helm-input-idle-delay 0.01  ; this actually updates things
+                                              ; reeeelatively quickly.
+                helm-quick-update t
+                helm-M-x-requires-pattern nil
+                helm-ff-skip-boring-files t)
+          (helm-mode))
+        :config
+        (progn
+          ;; I don't like the way switch-to-buffer uses history, since
+          ;; that confuses me when it comes to buffers I've already
+          ;; killed. Let's use ido instead.
+          (add-to-list 'helm-completing-read-handlers-alist 
+                       '(switch-to-buffer . ido))
+          (add-to-list 'helm-completing-read-handlers-alist 
+                       '(rename-file . ido))
+          (add-to-list 'helm-completing-read-handlers-alist 
+                       '(dired-rename-file . ido))
+          ;; Unicode
+          (add-to-list 'helm-completing-read-handlers-alist 
+                       '(insert-char . ido)))
+        :bind (("C-c h" . helm-mini) 
+               ("C-h a" . helm-apropos)
+               ("M-y" . helm-show-kill-ring)
+               ("M-x" . helm-M-x)
+               ("C-x c o" . helm-occur)
+               ("C-x c s" . helm-swoop)
+  ;             ("C-x c b" . sacha/helm-do-grep-book-notes)
+               ("C-x c SPC" . helm-all-mark-rings)))
+      (ido-mode -1) ;; Turn off ido mode in case I enabled it accidentally(use-package helm
+#+END_SRC
+
+#+RESULTS:
+
+Great for describing bindings
+
+#+BEGIN_SRC emacs-lisp
+  (use-package helm-descbinds
+    :bind (("C-h b" . helm-descbinds)
+           ("C-h w" . helm-descbinds)))
+#+END_SRC
+
+#+RESULTS:
+: t
+
+Apparently helm-grep is kind of slow, but I actually like it very much.
+Let's adapt Sacha's function
+#+BEGIN_SRC emacs-lisp
+  (defvar ze0/programming-sources-directory "~/Documents/programming")
+  (defun ze0/helm-do-grep-programming-sources ()
+    "Search all the programming sources"
+    (interactive)
+    (helm-do-grep-1 (list ze0/programming-sources-directory)))
+#+END_SRC
+
+#+RESULTS:
+: ze0/helm-do-grep-programming-sources
+
+*** Mode Line Format
+Display a more compact mode line
+#+BEGIN_SRC emacs-lisp
+  (use-package smart-mode-line
+    :init
+    (progn
+      (setq-default
+       mode-line-format
+       '("%e"
+         mode-line-front-space
+         mode-line-mule-info
+         mode-line-client
+         mode-line-modified
+         mode-line-remote
+         mode-line-frame-identification
+         mode-line-buffer-identification
+         "   "
+         mode-line-position
+         (vc-mode vc-mode)
+         "  "
+         mode-line-modes
+         mode-line-misc-info
+         mode-line-end-spaces))))
+  (line-number-mode)
+#+END_SRC
+
+#+RESULTS:
+: t
+
+*** Change "yes or no" to "y or n"
+#+BEGIN_SRC emacs-lisp
+  (fset 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+
+#+RESULTS:
+: y-or-n-p
+
+*** Minibuffer Editing - More Space
+I won't do that :)
+
+*** Set Up A Light-On-Dark Color Scheme
+Let's check out Sacha's color scheme
+#+BEGIN_SRC emacs-lisp :tangle no :eval no
+  (defadvice color-theme-alist (around ze0 activate)
+    (if (ad-get-arg 0)
+        ad-do-it
+      nil))
+  (use-package color-theme :ensure color-theme)
+  (use-package color-theme-solarized :ensure color-theme-solarized)
+  (defun ze0/setup-color-theme ()
+    (interactive)
+    (color-theme-solarized 'dark)
+    (set-face-foreground 'secondary-selection "darkblue")
+    (set-face-background 'secondary-selection "lightblue")
+    (set-face-background 'font-lock-doc-face "black")
+    (set-face-foreground 'font-lock-doc-face "wheat")
+    (set-face-background 'font-lock-string-face "black")
+    (set-face-foreground 'org-todo "green")
+    (set-face-background 'org-todo "black"))
+
+  (use-package color-theme
+    :init
+    (when window-system
+      (ze0/setup-color-theme)))
+#+END_SRC    
+
+#+RESULTS:
+: t
+
+Some more customizations
+
+#+BEGIN_SRC emacs-lisp :tangle no :eval no
+  (when window-system
+    (custom-set-faces
+     '(erc-input-face ((t (:foreground "antique white"))))
+     '(helm-selection ((t (:background "ForestGreen" :foreground "black"))))
+     '(org-agenda-clocking ((t (:inherit secondary-selection :foreground "black"))) t)
+     '(org-agenda-done ((t (:foreground "dim gray" :strike-through nil))))
+     '(org-done ((t (:foreground "PaleGreen" :weight normal :strike-through t))))
+     '(org-clock-overlay ((t (:background "SkyBlue4" :foreground "black"))))
+     '(org-headline-done ((((class color) (min-colors 16) (background dark)) (:foreground "LightSalmon" :strike-through t))))
+     '(outline-1 ((t (:inherit font-lock-function-name-face :foreground "cornflower blue"))))))
+#+END_SRC
+
+#+RESULTS:
+
+*** Undo Tree Mode
+
+To improve the undo model of Emacs we use undo-tree
+
+#+BEGIN_SRC emacs-lisp
+  (use-package undo-tree
+    :ensure undo-tree
+    :diminish undo-tree-mode
+    :init
+    (progn
+      (global-undo-tree-mode)
+      (setq undo-tree-visualizer-timestamps t)
+      (setq undo-tree-visualizer-diff t)))
+#+END_SRC 
+
+#+RESULTS:
+: t
+
+*** Help Guide Key
+The =guide-key= pops up help after a short period of time
+
+#+BEGIN_SRC emacs-lisp
+  (use-package guide-key
+    :diminish guide-key-mode
+    :init
+    (progn
+      (setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-c"))
+      (guide-key-mode 1)))
+#+END_SRC
+
+#+RESULTS:
+: t
+
+*** UTF-8
+From [[http://www.wisdomandwonder.com/wordpress/wp-content/uploads/2014/03/C3F.html][here]]
+
+#+BEGIN_SRC emacs-lisp
+  (prefer-coding-system 'utf-8)
+  (when (display-graphic-p)
+    (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING)))
+#+END_SRC
+
+#+RESULTS:
+| UTF8_STRING | COMPOUND_TEXT | TEXT | STRING |
+*** Killing Text
+*** COMMENT Shortcuts
+#+BEGIN_SRC emacs-lisp
+  (global-set-key "\C-x\C-m" 'execute-extended-command)
+  (global-set-key "\C-c\C-m" 'execute-extended-command)
+  (global-set-key "\C-w" 'backward-kill-word)
+  (global-set-key "\C-x\C-k" 'kill-region)
+  (global-set-key "\C-c\C-k" 'kill-region)
+  (global-set-key (kbd "C-s") 'isearch-forward-regexp)
+  (global-set-key (kbd "C-r") 'isearch-backward-regexp)
+  (global-set-key (kbd "C-%") 'query-replace-regexp)
+  (global-unset-key (kbd "C-z"))
+  (global-set-key [f1] 'eshell)
+#+END_SRC
+
+#+RESULTS:
+: eshell
+
+** Navigation
+*** Pop To Mark
+Handy way of getting back to previous places
+#+BEGIN_SRC emacs-lisp
+  (bind-key "C-x p" 'pop-to-mark-command)
+  (setq set-mark-command-repeat-pop t)
+#+END_SRC
+
+#+RESULTS:
+: t
+
+*** Text Size
+Simple text scale adjustments, the default is more difficult
+#+BEGIN_SRC emacs-lisp
+  (bind-key "C-+" 'text-scale-increase)
+  (bind-key "C--" 'text-scale-decrease)
+#+END_SRC
+*** Helm-Swoop - Quickly Finding Files
+Promised to find stuff fast, bind it to =Ctrl-Shift-s=
+#+BEGIN_SRC emacs-lisp
+  (use-package helm-swoop
+    :bind
+    (("C-S-s" . helm-swoop)
+     ("M-i" . helm-swoop)
+                                          ;("M-s s" . helm-swoop)
+                                          ;("M-s M-s" . helm-swoop)
+     ("M-I" . helm-swoop-back-to-last-point)
+     ("C-c M-i" . helm-multi-swoop)
+     ("C-x M-i" . helm-multi-swoop-all)
+     )
+    :config
+    (progn
+      (define-key isearch-mode-map (kbd "M-i") 'helm-swoop-from-isearch)
+      (define-key helm-swoop-map (kbd "M-i") 'helm-multi-swoop-all-from-helm-swoop))
+    )
+#+END_SRC
+
+#+RESULTS:
+: t
+
+*** Windmove - Switch Between Windows
+I am ignoring this so far, but can fit this in later
+[[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org#windmove---switching-between-windows][Have a look]]
+
+*** Make Window Splitting More Useful
+Copied from [[http://www.reddit.com/r/emacs/comments/25v0eo/you_emacs_tips_and_tricks/chldury][here]]
+#+BEGIN_SRC emacs-lisp
+  (defun ze0/vsplit-last-buffer (prefix)
+    "Split window vertically and display the previous buffer."
+    (interactive "p")
+    (split-window-vertically)
+    (other-window 1 nil)
+    (unless prefix
+      (switch-to-next-buffer)))
+  (defun ze0/hsplit-last-buffer (prefix)
+    "Split window horizontally and display the previous buffer."
+    (interactive "p")
+    (split-window-horizontally)
+    (other-window 1 nil)
+    (unless prefix
+      (switch-to-next-buffer)))
+  (bind-key "C-x 2" 'ze0/vsplit-last-buffer)
+  (bind-key "C-x 3" 'ze0/hsplit-last-buffer)
+#+END_SRC
+
+#+RESULTS:
+: ze0/hsplit-last-buffer
+
+*** Searching Based On Current Word
+I don't think I'll use that someday.. 
+
+Check it [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org#searching-based-on-the-current-word][here]]
+
+*** Frequently-Accessed Files
+Registers allows you to jump to a file or other location quickly. To jump to a register use
+=C-x r j= followed by a letter of the register. Using registers for all these file shortcuts 
+is probably a bit of a waste since I can easily define my own keymap
+#+BEGIN_SRC emacs-lisp
+  (mapcar
+   (lambda (r)
+     (set-register (car r) (cons 'file (cdr r))))
+   '((?i . "~/.emacs.d/ze0.org")
+     (?o . "~/git/org/organizer.org")
+     (?j . "~/git/org/journal.org")))
+#+END_SRC
+
+#+RESULTS:
+
+*** Key Chords
+This will be added later
+
+*** Smartscan
+From [[https://github.com/itsjeyd/emacs-config/blob/emacs24/init.el][here]]
+#+BEGIN_SRC emacs-lisp
+  (use-package smartscan
+    :init (global-smartscan-mode t))
+#+END_SRC
+
+#+RESULTS:
+: t
+
+*** Dired
+From [[http://www.masteringemacs.org/articles/2011/03/25/working-multiple-files-dired/][here]]
+#+BEGIN_SRC emacs-lisp
+(require 'find-dired)
+(setq find-ls-option '("-print0 | xargs -0 ls -ld" . "-ld"))
+#+END_SRC
+
+#+RESULTS:
+: (-print0 | xargs -0 ls -ld . -ld)
+
+*** Move To Beginning Of The Line
+Copied from [[http://emacsredux.com/blog/2013/05/22/smarter-navigation-to-the-beginning-of-a-line/][here]]
+#+BEGIN_SRC emacs-lisp
+  (defun ze0/smarter-move-beginning-of-line (arg)
+    "Move point back to indentation of the line.
+
+  Move point to the first non-whitespace character on this line.
+  If point is already there, move to the beginning of the line.
+  Effectively toggle between the first non-whitespace character and the
+  beginning of the line.
+
+  If ARG is not nil or 1, move forward ARG - 1 lines first. If
+  point reaches the beginning or end of the buffer, stop there."
+    (interactive "^p")
+    (setq arg (or arg 1))
+
+    ;; Move lines first
+    (when (/= arg 1)
+      (let ((line-move-visual nil))
+        (forward-line (1- arg))))
+
+    (let ((orig-point (point)))
+      (back-to-indentation)
+      (when (= orig-point (point))
+        (move-beginning-of-line 1))))
+
+  ;; remap C-a to 'smarter-move-beginning-of-line
+  (global-set-key [remap move-beginning-of-line]
+                  'ze0/smarter-move-beginning-of-line)
+#+END_SRC
+
+#+RESULTS:
+: ze0/smarter-move-beginning-of-line
+
+*** Recent Files
+#+BEGIN_SRC emacs-lisp
+  (require 'recentf)
+  (setq recentf-max-saved-items 200
+        recentf-max-menu-items 15)
+  (recentf-mode)
+#+END_SRC
+
+#+RESULTS:
+: t
+
+*** Copy Filename To Clipboard
+[[http://emacsredux.com/blog/2013/03/27/copy-filename-to-the-clipboard/][here]] and [[https://github.com/bbatsov/prelude][here]]
+#+BEGIN_SRC emacs-lisp
+  (defun prelude-copy-file-name-to-clipboard ()
+    "Copy the current buffer file name to the clipboard"
+    (interactive)
+    (let ((filename (if (equal major-mode 'dired-mode)
+                        default-directory
+                      (buffer-file-name))))
+      (when filename
+        (kill-new filename)
+        (message "Copied buffer file name '%s' to the clipboard." filename))))
+#+END_SRC
+
+#+RESULTS:
+: prelude-copy-file-name-to-clipboard
+
+*** Narrowing
+[[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org#narrowing][See here]]
+
+** Reading
+There is nothing of interest to me here ;)
+** Writing
+*** Avoid Weasel Words
+I am not writing enough to have a need for this :)
+
+*** Unfill Paragraph
+Again something only Sacha needs.
+
+*** Transpose 
+Transpose stuff with =M-t=
+#+BEGIN_SRC emacs-lisp
+  (bind-key "M-t" nil) ;used to be transpose word
+  (bind-key "M-t l" 'transpose-lines)
+  (bind-key "M-t w" 'transpose-words)
+  (bind-key "M-t t" 'transpose-words)
+  (bind-key "M-t M-t" 'transpose-words)
+  (bind-key "M-t s" 'transpose-sexps)
+#+END_SRC
+
+#+RESULTS:
+: transpose-sexps
+
+*** Auto Fill Mode
+#+BEGIN_SRC emacs-lisp
+(setq auto-fill-column 80)
+#+END_SRC
+
+#+RESULTS:
+: 80
+
+*** Clean Up Spaces
+#+BEGIN_SRC emacs-lisp
+  (bind-key "M-SPC" 'cycle-spacing)
+#+END_SRC
+
+#+RESULTS:
+: cycle-spacing
+
+** Org
+As the most awesome people do, I too use org-mode! :)
+
+#+STARTUP: content indent hidestars hideblocks
+
+#+BEGIN_SRC emacs-lisp
+  (use-package org
+    :diminish org-mode)
+#+END_SRC
+
+#+RESULTS:
+: t
+
+*** My Files
+
+#<<org-files>>
+
+All of the org files I use
+| university.org | Everything regarding my study                                                    |
+| personal.org   | Everything personal, mostly the main stuff like next actions, projects or people |
+| work.org       | Everything regarding the work in the HU                                          |
+| organizer.org  | All dates to be remembered, tasks?                                               |
+| journal.org    | Stuff to collect                                                                 |
+| ze0.org        | This great file!                                                                 |
+
+*** TODO Modules
+I still have no idea about org-modules, will look into that soonish
+
+Hava a look [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org#modules][here]]
+
+*** Keyboard Shortcuts
+#+BEGIN_SRC emacs-lisp
+  (bind-key "C-c r" 'org-capture)
+  (bind-key "C-c a" 'org-agenda)
+  (bind-key "C-c l" 'org-store-link)
+  (bind-key "C-c L" 'org-insert-link-global)
+  (bind-key "C-c O" 'org-open-at-point-global)
+  (bind-key "<f9> <f9>" 'org-agenda-list)
+  (bind-key "<f9> <f8>" (lambda () (interactive) (org-capture nil "r")))
+  (bind-key "C-c v" 'org-show-todo-tree org-mode-map)
+  (bind-key "C-c C-r" 'org-refile org-mode-map)
+  (bind-key "C-c R" 'org-reveal org-mode-map)
+
+  (eval-after-load 'org-agenda
+    '(bind-key "i" 'org-agenda-clock-in org-agenda-mode-map))
+#+END_SRC
+
+#+RESULTS:
+
+*** Navigation
+
+*** 
+From [[http://stackoverflow.com/questions/15011703/is-there-an-emacs-org-mode-command-to-jump-to-an-org-heading][here]]
+#+BEGIN_SRC emacs-lisp
+  (setq org-goto-interface 'outline
+        org-goto-max-level 10)
+  (require 'imenu)
+  (setq org-startup-folded nil)
+  (bind-key "M-o" 'imenu)
+  (bind-key "C-c j" 'org-clock-goto)
+  (bind-key "C-c C-w" 'org-refile)
+  (setq org-cycle-include-plain-lists 'integrate)
+#+END_SRC 
+
+#+RESULTS:
+: integrate
+
+*** Pomodoro
+#+BEGIN_SRC emacs-lisp
+  (use-package org-pomodoro)
+  (unbind-key "C-M-i")
+  (bind-key "C-M-i" 'org-pomodoro)
+#+END_SRC
+
+#+RESULTS:
+: org-pomodoro
+
+*** Link Org Subtrees and Navigate Between Them
+Makes it easier to link trees with entries
+#+BEGIN_SRC emacs-lisp
+  (defun ze0/org-follow-entry-link ()
+    "Follow the defined link for this entry."
+    (interactive)
+    (if (org-entry-get (point) "LINK")
+        (org-open-link-from-string (org-entry-get (point) "LINK"))
+      (org-open-at-point)))
+
+  (bind-key "C-c o" 'ze0/org-follow-entry-link org-mode-map)
+
+  (defun ze0/org-link-projects (location)
+    "Add link properties between the current subtree and the one specified by LOCATION."
+    (interactive
+     (list (let ((org-refile-use-cache nil))
+             (org-refule-get-location "Location"))))
+    (let ((link11 (org-store-link nil)) link2)
+      (save-window-excursion
+        (org-refile 4 nil location)
+        (setq link2 (org-store-link nil))
+        (org-set-property "LINK" link1))
+      (org-set-property "LINK" link2)))
+#+END_SRC
+
+#+RESULTS:
+: ze0/org-link-projects
+
+*** Taking Notes
+Setting the directories for the notes to be placed in - this will be synced soonish
+#+BEGIN_SRC emacs-lisp
+  (setq org-directory "~/git/org")
+  (setq org-default-notes-file "~/git/org/personal.org")
+#+END_SRC
+
+#+RESULTS:
+: ~/git/org/personal.org
+
+This makes it easier to add links from outside
+#+BEGIN_SRC emacs-lisp
+  (defun ze0/yank-more ()
+    (interactive)
+    (insert "[[")
+    (yank)
+    (insert "][more]]"))
+  (global-set-key (kbd "<f6>") 'ze0/yank-more)
+#+END_SRC
+
+#+RESULTS:
+: ze0/yank-more
+
+**** Date Trees
+Quickly add a same-level heading for the next day
+#+BEGIN_SRC emacs-lisp
+  (defun ze0/org-insert-heading-for-next-day ()
+    "Insert same-level heading for the next day."
+    (interactive)
+    (let ((new-date
+           (seconds-to-time
+            (+ 86400.0
+               (float-time
+                (org-read-date nil 'to-time (elt (org-heading-components) 4)))))))
+      (org-insert-heading-after-current)
+      (insert (format-time-string "%Y-%m-%d\n\n" new-date))))
+#+END_SRC
+
+#+RESULTS:
+: ze0/org-insert-heading-for-next-day
+
+**** Templates
+Let's use =org-capture= to quickly add the things that come to mind all the time :)
+
+#+BEGIN_SRC emacs-lisp
+  (defvar ze0/org-basic-task-template "* TODO %^{Task}
+  SCHEDULED: %^t
+  :PROPERTIES:
+  :Effort: %^{effort|1:00|0:05|0:10|0:15|0:30|0:45|2:00|4:00}
+  :END:
+  %?
+  " "Basic task data")
+  (defvar ze0/org-programming-workout-template "* %^{Workout Description}
+  :PROPERTIES:
+  :Effort: %^{effort|0:05|0:10|0:15|0:20|0:25}
+  :END:
+  %^g%?
+  " "Programming Workout Template")
+  (setq org-capture-templates
+        `(("t" "Tasks" entry
+           (file+headline "~/git/org/organizer.org" "INBOX")
+           ,ze0/org-basic-task-template)
+          ("T" "Quick Task" entry
+           (file+headline "~/git/org/organizer.org" "INBOX")
+           "* TODO %^{Task}"
+           :immediate-finish t)
+          ("j" "Journal entry" plain
+           (file+datetree "~/git/org/journal.org")
+           "%K - %a\n%i\n%?\n")
+          ("a" "Appointments" entry
+           (file+headline "~/git/org/organizer.org" "Appointments")
+           "* %?\n%i")
+          ("d" "Decisions" entry
+           (file+headline "~/git/org/personal.org" "Decisions")
+           "* %?\n%i")
+          ("pw" "Workout" entry
+           (file+headline "~/git/org/personal.org" "Primary Skills")
+           ,ze0/org-programming-workout-template)))
+  (bind-key "C-M-r" 'org-capture)
+#+END_SRC
+
+#+RESULTS:
+: org-capture
+
+
+***** Allow refiling in the middle of a capture
+
+**** Refiling
+=org-refile= lets you organize notes by typing in the headline to file them under
+#+BEGIN_SRC emacs-lisp
+  (setq org-reverse-note-order t)
+  (setq org-refile-use-outline-path nil)
+  (setq org-refile-allow-creating-parent-nodes 'confirm)
+  (setq org-refile-use-cache nil)
+  (setq org-refile-targets '((org-agenda-files . (:maxlevel . 6))))
+  (setq org-blank-before-entry nil)
+#+END_SRC
+
+#+RESULTS:
+
+*** Managing Tasks
+**** Track TODO state
+<<todo-keywords>>
+#+BEGIN_SRC emacs-lisp
+  (setq org-todo-keywords
+        '((sequence
+           "TODO(t)"   ; next action
+           "TOBLOG(b)"  ; next action
+           "STARTED(s)"
+           "WAITING(w@/!)"
+           "SOMEDAY(.)" "|" "DONE(x!)" "CANCELLED(c@)")
+          (sequence "TODELEGATE(-)" "DELEGATED(d)" "|" "COMPLETE(x)")))
+
+  (setq org-todo-keyword-faces
+        '(("TODO" . (:foreground "green" :weight bold))
+          ("DONE" . (:foreground "cyan" :weight bold))
+          ("WAITING" . (:foreground "red" :weight bold))
+          ("SOMEDAY" . (:foregound "gray" :weight bold))))
+#+END_SRC
+
+#+RESULTS:
+| TODO    | :foreground | green | :weight | bold |
+| DONE    | :foreground | cyan  | :weight | bold |
+| WAITING | :foreground | red   | :weight | bold |
+| SOMEDAY | :foregound  | gray  | :weight | bold |
+
+**** Projects
+Don't inherit the project tag
+#+BEGIN_SRC emacs-lisp
+(setq org-tags-exclude-from-inheritance '("project"))
+#+END_SRC
+
+#+RESULTS:
+| project |
+
+This code makes it easy to focus on one project and it's tasks
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'org-speed-commands-user '("N" org-narrow-to-subtree))
+  (add-to-list 'org-speed-commands-user '("W" widen))
+  (defun ze0/org-agenda-for-subtree ()
+    (interactive)
+    (if (derived-mode-p 'org-agenda-mode)
+        (let* ((marker (or (org-get-at-bol 'org-hd-marker)
+                           (org-agenda-error)))
+               (hdmarker (or (org-get-at-bol 'org-hd-marker) marker))
+               (pos (marker-position-marker))
+               (col (current-column))
+               newhead)
+          (org-with-remote-undo (marker-buffer marker)
+            (with-current-buffer (marker-buffer marker)
+              (widen)
+              (let ((org-agenda-view-columns-initially t))
+                (org-agenda nil "t" 'subtree)))))
+      (let ((org-agenda-view-columns-initially t))
+        (org-agenda nil "t" 'subtree))))
+  (add-to-list 'org-speed-commands-user '("T" ze0/org-agenda-for-subtree))
+#+END_SRC
+
+#+RESULTS:
+| T | ze0/org-agenda-for-subtree |
+| W | widen                      |
+| N | org-narrow-to-subtree      |
+
+**** Tag Tasks with GTD-ish contexts
+This defines the key commands for those, too.
+#+BEGIN_SRC emacs-lisp
+  (setq org-tag-alist '(("@work" . ?b)
+                        ("@home" . ?h)
+                        ("@writing" . ?w)
+                        ("@coding" . ?c)
+                        ("@phone" . ?p)
+                        ("@reading" . ?r)
+                        ("@computer" . ?l)
+                        ("quantified" . ?q)
+                        ("highenergy" . ?1)
+                        ("lowenergy" . ?0)))
+#+END_SRC
+
+#+RESULTS:
+
+**** Enable Filtering by Effort Estimates
+That way it is easy to see short tasks that i can finish fast
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'org-global-properties
+               '("Effort_ALL" . "0:05 0:15 0:30 0:45 1:00 2:00 4:00"))
+#+END_SRC
+
+#+RESULTS:
+
+**** Track Time
+#+BEGIN_SRC emacs-lisp
+  (defun ze0/org-clock-in-set-state-to-started ()
+    "Mark STARTED when clocked in."
+    (save-excursion
+      (catch 'exit
+        (cond
+         ((derived-mode-p 'org-agenda-mode)
+          (let* ((marker (or (org-get-at-bol 'org-marker)
+                             (org-agenda-error)))
+                 (hdmarker (or (org-get-at-bol 'org-hd-marker) marker))
+                 (pos (marker-position marker))
+                 (col (current-column))
+                 newhead)
+            (org-with-remote-undo (marker-buffer marker)
+              (with-current-buffer (marker-buffer marker)
+                (widen)
+                (goto-char pos)
+                (org-back-to-heading t)
+                (if (org-get-todo-state)
+                    (org-todo "STARTED"))))))
+         (t (if (org-get-todo-state)
+                (org-todo "STARTED")))))))
+  (use-package org
+    :init
+    (progn
+      (setq org-clock-idle-time nil)
+      (setq org-log-done 'time)
+      (setq org-clock-persist t)
+      (setq org-clock-report-include-clocking-task t))
+    :config
+    (progn
+      (org-clock-persistence-insinuate)
+      (add-hook 'org-clock-in-hook 'ze0/org-clock-in-set-state-to-started)))
+#+END_SRC
+
+#+RESULTS:
+: t
+
+Too many clock entries clutter up a heading
+#+BEGIN_SRC emacs-lisp
+  (setq org-log-into-drawer "LOGBOOK")
+  (setq org-clock-into-drawer 1)
+#+END_SRC
+
+#+RESULTS:
+: 1
+
+**** Habits
+#+BEGIN_SRC emacs-lisp
+  (setq org-habit-graph-column 80)
+  (setq org-habit-show-habits-only-for-today nil)
+#+END_SRC
+
+#+RESULTS:
+
+**** Estimating Tasks
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'org-clock-in-prepare-hook
+            'ze0/org-mode-ask-effort)
+  (defun ze0/org-mode-ask-effort ()
+    "Ask for an effort estimate when clocking in."
+    (unless (org-entry-get (point) "Effort")
+      (let ((effort
+             (completing-read
+              "Effort: "
+              (org-entry-get-multivalued-property (point) "Effort"))))
+        (unless (equal effort "")
+          (org-set-property "Effort" effort)))))
+#+END_SRC
+
+#+RESULTS:
+: ze0/org-mode-ask-effort
+
+*** Org Agenda
+**** Basic Configuration
+#+BEGIN_SRC emacs-lisp
+  (setq org-agenda-files
+        (delq nil
+              (mapcar (lambda (x) (and (file-exists-p x) x))
+                      '("~/git/org/personal.org"
+                        "~/git/org/university.org"
+                        "~/git/org/work.org"
+                        "~/git/org/journal.org"
+                        "~/git/org/organizer.org"
+                        "~/git/org/routines.org"))))
+#+END_SRC
+
+#+RESULTS:
+| ~/git/org/personal.org | ~/git/org/university.org | ~/git/org/work.org | ~/git/org/journal.org | ~/git/org/organizer.org |
+
+This is some configuration of Sacha's
+#+BEGIN_SRC emacs-lisp
+  (setq org-agenda-span 2)
+  (setq org-agenda-sticky nil)
+  (setq org-agenda-show-log t)
+  (setq org-agenda-skip-scheduled-if-done t)
+  (setq org-agenda-skip-deadline-if-done t)
+  (setq org-agenda-skip-deadline-prewarning-if-scheduled 'pre-scheduled)
+  (setq org-agenda-time-grid
+        '((daily today require-timed)
+          "-------------"
+          (800 1000 1200 1400 1600 1800)))
+  (setq org-columns-default-format "%50ITEM %12SCHEDULED %TODO %3PRIORITY %Effort{:} %TAGS")
+#+END_SRC
+
+#+RESULTS:
+: %50ITEM %12SCHEDULED %TODO %3PRIORITY %Effort{:} %TAGS
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-x g") 'magit-status)
+#+END_SRC
+
+#+RESULTS:
+: magit-status
+
+*** LaTeX Stuff
+
+
+#+RESULTS:
+| mastersthesis | \documentclass{report}\n               [NO-DEFAULT-PACKAGES]\n               [PACKAGES]\n               [EXTRA] | (\chapter{%s} . \chapter{%s})  | (\section{%s} . \section{%s})        | (\subsection{%s} \newpage \subsection{%s} \newpage) | (\subsubsection{%s} . \subsubsection*{%s}) | (\paragraph{%s} . \paragraph*{%s})         | (\subparagraph{%s} . \subparagraph*{%s}) |
+| article       | \documentclass[11pt]{article}                                                                                   | (\section{%s} . \section*{%s}) | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s})          | (\paragraph{%s} . \paragraph*{%s})         | (\subparagraph{%s} . \subparagraph*{%s})   |                                          |
+| report        | \documentclass[11pt]{report}                                                                                    | (\part{%s} . \part*{%s})       | (\chapter{%s} . \chapter*{%s})       | (\section{%s} . \section*{%s})                      | (\subsection{%s} . \subsection*{%s})       | (\subsubsection{%s} . \subsubsection*{%s}) |                                          |
+| book          | \documentclass[11pt]{book}                                                                                      | (\part{%s} . \part*{%s})       | (\chapter{%s} . \chapter*{%s})       | (\section{%s} . \section*{%s})                      | (\subsection{%s} . \subsection*{%s})       | (\subsubsection{%s} . \subsubsection*{%s}) |                                          |
+
+*** Org-Babel
+#+BEGIN_SRC emacs-lisp
+(setq org-ditaa-jar-path "~/bin/ditaa.jar")
+(setq org-startup-with-inline-images t)
+(use-package org
+ :config
+ (progn
+(add-hook 'org-babel-after-execute-hook 'org-display-inline-images)
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((dot . t)
+   (ditaa . t) 
+   (sh . t)
+   (R . t)))
+(add-to-list 'org-src-lang-modes '("dot" . graphviz-dot))))
+#+END_SRC
+
+We want to accept 'safe' languages by default without confirmation
+#+BEGIN_SRC emacs-lisp
+  (defun my-org-confirm-babel-evaluate (lang body)
+    (not (string= lang "ditaa")))  ; don't ask for ditaa
+  (setq org-confirm-babel-evaluate 'my-org-confirm-babel-evaluate)
+#+END_SRC
+** Programming
+General settings for all programming languages
+#+BEGIN_SRC emacs-lisp
+(require 'auto-complete)
+(require 'auto-complete-config)
+(ac-config-default)
+(global-auto-complete-mode t)
+#+END_SRC
+
+#+RESULTS:
+: t
+
+*** Python
+#+BEGIN_SRC emacs-lisp
+(require 'python)
+  (use-package elpy
+    :ensure elpy
+    :config
+    (elpy-use-ipython)
+    (add-hook 'python-mode-hook 'auto-complete-mode))
+(elpy-enable)
+#+END_SRC
+
+#+RESULTS:
+: t
+
+Use IPython and the wx backend for mayavi and matplotlib
+#+BEGIN_SRC emacs-lisp
+  (setq-default py-shell-name "ipython")
+  (setq-default py-which-bufname "IPython")
+  (setq py-python-command-args
+        '("--gui=wx" "--pylab=wx" "-colors" "Linux"))
+  (setq py-force-py-shell-name-p t)
+#+END_SRC
+
+#+RESULTS:
+: t
+
+Switch to the interpreter after executing code
+#+BEGIN_SRC emacs-lisp
+  (setq py-shell-switch-buffers-on-execute-p t)
+  (setq py-switch-buffers-on-execute-p t)
+  (setq py-split-windows-on-execute-p t)
+  (setq py-smart-indentation t)
+#+END_SRC
+
+#+RESULTS:
+: t
+
+*** C
+** Organization
+*** Tomatinho
+#+BEGIN_SRC emacs-lisp
+  (use-package tomatinho)
+  (require 'tomatinho)
+#+END_SRC
+
+#+RESULTS:
+: tomatinho
+

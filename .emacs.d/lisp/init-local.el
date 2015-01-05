@@ -66,7 +66,10 @@
         ("i" "Inbox item to be processed later" entry (file+headline "~/git/org/personal.org" "INBOX")
          "* %?\n  %i\n  %a" :empty-lines-before 1)
         ("j" "Journal" entry (file+datetree "~/git/org/journal.org")
-         "* %?\n\n%i\n\nEntered on %U\n\t%a" :empty-lines-before 1)))
+         "* %?\n\n%i\n\nEntered on %U\n\t%a" :empty-lines-before 1)
+        ("m" "Masterthesis" entry (file+headline "~/git/org/university.org" "Tasks")
+         "* TODO %?\n%i\nEntered on %U\n\t%a")))
+
 
 (provide 'init-local)
 ;;; init-local ends here
